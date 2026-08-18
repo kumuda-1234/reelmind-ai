@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
-import type { AnalysisResult } from '@/engine/types';
+import type { AnalysisResult, Interaction, InteractionType } from '@/engine/types';
 import { api } from '@/engine/api';
+import { SEED_INTERACTIONS } from '@/engine/seedData';
 import { Sidebar, type PageId } from '@/components/Sidebar';
 import { TopBar } from '@/components/TopBar';
 import { OverviewPage } from '@/pages/OverviewPage';
@@ -16,6 +17,7 @@ function App() {
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [demoInteractions, setDemoInteractions] = useState<Interaction[]>([]);
 
   const handleAnalyze = useCallback(async () => {
     setAnalyzing(true);
@@ -34,6 +36,51 @@ function App() {
   const handleNavigate = useCallback((page: string) => {
     setCurrentPage(page as PageId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const handleDemoInteraction = useCallback(async (
+    reelId: string,
+    type: InteractionType,
+    watchCompletion: number
+  ) => {
+    const interaction: Interaction = {
+      id: `demo-${Date.now()}-${demoInteractions.length + 1}`,
+      reelId,
+      type,
+      watchCompletion,
+      timestamp: Date.now(),
+      week: 4,
+    };
+    const updatedInteractions = [...demoInteractions, interaction];
+    setAnalyzing(true);
+    setError(null);
+    try {
+      const result = await api.analyzeWithInteractions([...SEED_INTERACTIONS, ...updatedInteractions]);
+      setDemoInteractions(updatedInteractions);
+      setAnalysis(result);
+    } catch (e) {
+      setError('Unable to update the live demo. Please try again.');
+      console.error('Live demo analysis error:', e);
+      throw e;
+    } finally {
+      setAnalyzing(false);
+    }
+  }, [demoInteractions]);
+
+  const handleResetDemo = useCallback(async () => {
+    setAnalyzing(true);
+    setError(null);
+    try {
+      const result = await api.analyze();
+      setDemoInteractions([]);
+      setAnalysis(result);
+    } catch (e) {
+      setError('Unable to reset the live demo. Please try again.');
+      console.error('Live demo reset error:', e);
+      throw e;
+    } finally {
+      setAnalyzing(false);
+    }
   }, []);
 
   // Auto-run analysis on first load so the demo works immediately
@@ -65,6 +112,9 @@ function App() {
             onAnalyze={handleAnalyze}
             analyzing={analyzing}
             onNavigate={handleNavigate}
+            onDemoInteraction={handleDemoInteraction}
+            onResetDemo={handleResetDemo}
+            demoInteractionCount={demoInteractions.length}
           />
         );
       case 'reel-intelligence':
@@ -84,6 +134,9 @@ function App() {
             onAnalyze={handleAnalyze}
             analyzing={analyzing}
             onNavigate={handleNavigate}
+            onDemoInteraction={handleDemoInteraction}
+            onResetDemo={handleResetDemo}
+            demoInteractionCount={demoInteractions.length}
           />
         );
     }

@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import type { AnalysisResult } from '@/engine/types';
+import type { AnalysisResult, InteractionType } from '@/engine/types';
 import { GlassCard, SectionTitle } from '@/components/GlassCard';
 import { ScoreBar } from '@/components/ScoreBar';
 import { Badge } from '@/components/Badge';
 import { PipelineViz } from '@/components/PipelineViz';
 import { InterestGraphViz } from '@/components/InterestGraphViz';
+import { LiveDemoPanel } from '@/components/LiveDemoPanel';
 import { formatDuration, scoreTextColor, confidenceColor, difficultyColor } from '@/lib/utils';
 import { labelOf } from '@/lib/labels';
 import {
@@ -30,9 +31,12 @@ interface OverviewPageProps {
   onAnalyze: () => void;
   analyzing: boolean;
   onNavigate: (page: string) => void;
+  onDemoInteraction: (reelId: string, type: InteractionType, watchCompletion: number) => Promise<void>;
+  onResetDemo: () => Promise<void>;
+  demoInteractionCount: number;
 }
 
-export function OverviewPage({ analysis, onAnalyze, analyzing, onNavigate }: OverviewPageProps) {
+export function OverviewPage({ analysis, onAnalyze, analyzing, onNavigate, onDemoInteraction, onResetDemo, demoInteractionCount }: OverviewPageProps) {
   const [pipelineTrigger, setPipelineTrigger] = useState(0);
   const [feedbackGiven, setFeedbackGiven] = useState<'up' | 'down' | null>(null);
 
@@ -118,6 +122,14 @@ export function OverviewPage({ analysis, onAnalyze, analyzing, onNavigate }: Ove
         stages={analysis.pipeline}
         trigger={pipelineTrigger}
         onComplete={() => {}}
+      />
+
+      <LiveDemoPanel
+        analysis={analysis}
+        analyzing={analyzing}
+        interactionCount={demoInteractionCount}
+        onInteraction={onDemoInteraction}
+        onReset={onResetDemo}
       />
 
       {/* Hero summary */}
@@ -427,5 +439,4 @@ export function OverviewPage({ analysis, onAnalyze, analyzing, onNavigate }: Ove
     </div>
   );
 }
-
 

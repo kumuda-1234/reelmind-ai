@@ -55,6 +55,11 @@ export const api = {
     return engine.analyze(SEED_REELS, SEED_INTERACTIONS, CANDIDATE_REELS, config, feedbackStore);
   },
 
+  // Demo-only analysis path. Callers own the in-memory interaction list; seed data is never mutated.
+  async analyzeWithInteractions(interactions: Interaction[]): Promise<AnalysisResult> {
+    return engine.analyze(SEED_REELS, interactions, CANDIDATE_REELS, config, feedbackStore);
+  },
+
   // GET /api/feedback
   async getFeedback(): Promise<FeedbackEntry[]> {
     return feedbackStore;
